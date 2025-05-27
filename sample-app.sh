@@ -1,22 +1,35 @@
 #!/bin/bash
 
-mkdir tempdir
-mkdir tempdir/templates
-mkdir tempdir/static
+set -e  # Stop kalau ada error
+set -x  # Tampilkan semua perintah (debugging)
 
+# Bersihkan folder jika sudah ada
+rm -rf tempdir
+
+# Buat struktur direktori
+mkdir -p tempdir/templates
+mkdir -p tempdir/static
+
+# Salin file yang dibutuhkan
 cp sample_app.py tempdir/.
-cp -r templates/* tempdir/templates/.
-cp -r static/* tempdir/static/.
+cp -r templates/* tempdir/templates/
+cp -r static/* tempdir/static/
 
-echo "FROM python" >> tempdir/Dockerfile
-echo "RUN pip install flask" >> tempdir/Dockerfile
-echo "COPY  ./static /home/myapp/static/" >> tempdir/Dockerfile
-echo "COPY  ./templates /home/myapp/templates/" >> tempdir/Dockerfile
-echo "COPY  sample_app.py /home/myapp/" >> tempdir/Dockerfile
-echo "EXPOSE 8080" >> tempdir/Dockerfile
-echo "CMD python /home/myapp/sample_app.py" >> tempdir/Dockerfile
+# Buat Dockerfile
+cat <<EOF > tempdir/Dockerfile
+FROM python
+RUN pip install flask
+COPY ./static /home/myapp/static/
+COPY ./templates /home/myapp/templates/
+COPY sample_app.py /home/myapp/
+EXPOSE 8080
+CMD python /home/myapp/sample_app.py
+EOF
 
+# Build dan jalankan container
 cd tempdir
 docker build -t sampleapp .
+docker stop samplerunning || true
+docker rm samplerunning || true
 docker run -t -d -p 8080:8080 --name samplerunning sampleapp
-docker ps -a 
+docker ps -a
